@@ -16,7 +16,7 @@ class ArticleController extends Controller
     public function index()
     {
         // Get articles
-        $articles = Article::paginate(15);
+        $articles = Article::orderBy('created_at', 'desc')->paginate(5);
 
         // Return collection of articles as a resource
         return ArticleResource::collection($articles);
@@ -38,6 +38,8 @@ class ArticleController extends Controller
 
         if ($article->save()) {
             return new ArticleResource($article);
+        } else {
+            return response()->json(['message' => 'Internal Server Error'], 500);
         }
     }
 
@@ -50,7 +52,11 @@ class ArticleController extends Controller
     public function show($id)
     {
         // Get article
-        $article = Article::findOrFail($id);
+        $article = Article::find($id);
+
+        if (!$article) {
+            return response()->json(['message' => 'Not Found'], 404);
+        }
 
         // Return single article as resource
         return new ArticleResource($article);
@@ -60,19 +66,24 @@ class ArticleController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request $request
-     * @param  int $id
      * @return ArticleResource
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
         // Get article
-        $article = Article::findOrFail($id);
+        $article = Article::find($request->input('id'));
+
+        if (!$article) {
+            return response()->json(['message' => 'Not Found'], 404);
+        }
 
         $article->title = $request->input('title');
         $article->body = $request->input('body');
 
         if ($article->save()) {
             return new ArticleResource($article);
+        } else {
+            return response()->json(['message' => 'Not Modified'], 304);
         }
     }
 
@@ -85,7 +96,11 @@ class ArticleController extends Controller
     public function destroy($id)
     {
         // Get article
-        $article = Article::findOrFail($id);
+        $article = Article::find($id);
+
+        if (!$article) {
+            return response()->json(['message' => 'Not Found'], 404);
+        }
 
         // Return single article as resource
         if ($article->delete()) {
